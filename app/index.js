@@ -1,8 +1,10 @@
 
 
 import document from "document";
+import clock from "clock";
 import { HeartRateSensor } from "heart-rate";
 import * as messaging from "messaging";
+import exercise from "exercise";
 
 let container = document.getElementById("container");
 let fallRecord = null;
@@ -11,6 +13,7 @@ let fallDesc = null;
 let fallConfirmation = 0;
 let activityString = null;
 let activityBeginConfirm = 0;
+let activityEndConfirm = 0;
 // Get the selected index
 let currentIndex = container.value;
 
@@ -38,11 +41,27 @@ setInterval(getSensorRecord, 1000);
 // check for event every 1 second
 setInterval(checkEvent, 1000);
 
+
+
+
 //------------------------------------------------------------------------------------------------------//
+let myClock = document.getElementById("myClock");
 let fallType = document.getElementById("fallType");
 let fallDescList = document.getElementById("fallDescList");
 let fallConfirm = document.getElementById("fallConfirm");
 let activityBeginConfirm_popup = document.getElementById("activityBeginConfirm_popup");
+let activityEndConfirm_popup = document.getElementById("activityEndConfirm_popup");
+
+exercise.state == "stopped";
+let myClock = document.getElementById("myClock");
+clock.granularity = 'seconds'; // seconds, minutes, hours
+
+clock.ontick = function (evt) {
+    if (exercise.state === "started") {
+        myClock.display = "inline";
+        myClock.text = 0 + Math.round(exercise.stats.activeTime/1000);
+    }
+};
 
 let fallBtn = document.getElementById("fallBtn");
 fallBtn.onclick = function (evt) {
@@ -66,7 +85,12 @@ sitBtn.onclick = function (evt) {
 let walkBtn = document.getElementById("walkBtn");
 walkBtn.onclick = function (evt) {
     activityString = "Walking";
-    activityBeginConfirm_popup.style.display = "inline";
+    if (exercise.state === "started") {
+        activityEndConfirm_popup.style.display = "inline";
+    }
+    if (exercise.state === "stopped") {
+        activityBeginConfirm_popup.style.display = "inline";
+    }
 }
 
 let runBtn = document.getElementById("runBtn");
@@ -181,6 +205,8 @@ noBtn.onclick = function (evt) {
 let yesBtn = activityBeginConfirm_popup.getElementById("yesBtn");
 yesBtn.onclick = function (evt) {
     activityBeginConfirm = 1;
+    myClock.style.display = "inline";
+    exercise.start("walk");
     activityBeginConfirm_popup.style.display = "none";
 }
 
@@ -188,6 +214,20 @@ let noBtn = activityBeginConfirm_popup.getElementById("noBtn");
 noBtn.onclick = function (evt) {
     activityBeginConfirm = 0;
     activityBeginConfirm_popup.style.display = "none";
+}
+
+let yesBtn = activityEndConfirm_popup.getElementById("yesBtn");
+yesBtn.onclick = function (evt) {
+    activityEndConfirm = 1;
+    exercise.stop();
+    myClock.style.display = "none";
+    activityEndConfirm_popup.style.display = "none";
+}
+
+let noBtn = activityEndConfirm_popup.getElementById("noBtn");
+noBtn.onclick = function (evt) {
+    activityEndConfirm = 0;
+    activityEndConfirm_popup.style.display = "none";
 }
 
 //------------------------------------------------------------------------------------------------------//
@@ -200,11 +240,18 @@ function checkEvent() {
         fallConfirmation = 0;
     }
     if (activityBeginConfirm == 1) {
-        let event = activityString;
+        let event = activityString + ":begin";
         let data = getEventRecord(event);
         jsonObj.push(data);
         activityBeginConfirm = 0;
     }
+    if (activityEndConfirm == 1) {
+        let event = activityString + ":end";
+        let data = getEventRecord(event);
+        jsonObj.push(data);
+        activityEndConfirm = 0;
+        myClock.text = 0;
+    } 
     // check if local records json is 'full', send to companion
     if (Object.keys(jsonObj).length >= 10) {         // ran out of memory at ~1000 when tested
         sendToCompanion(jsonObj);

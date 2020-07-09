@@ -1,6 +1,6 @@
 {
   "fitbit": {
-    "appUUID": "6a671ddc-a952-425c-85aa-6db0c64f7b35",
+    "appUUID": "2fcdb517-45bd-488a-9ab2-222ce574b4c4",
     "appType": "app",
     "appDisplayName": "PD patient app",
     "iconFile": "resources/icon.png",
@@ -9,6 +9,7 @@
       "access_activity",
       "access_user_profile",
       "access_heart_rate",
+      "access_exercise",
       "access_location",
       "access_internet"
     ],
